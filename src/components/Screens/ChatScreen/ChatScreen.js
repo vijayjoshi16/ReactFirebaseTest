@@ -3,7 +3,7 @@ import { db } from "../../../firebase";
 import { ref,set,onValue, onChildChanged } from "firebase/database";
 import { userContext } from "../../../App";
 import { useNavigate } from "react-router-dom"
-import {Grid} from '@material-ui/core';
+import {Grid, setRef} from '@material-ui/core';
 import { successToast } from "../../toast";
 
 const ChatScreen = ()=>{
@@ -15,6 +15,16 @@ const ChatScreen = ()=>{
     const { state, dispatch } = useContext(userContext);
     const userRef = ref(db,'users/');
     console.log(users)
+    const statusMap = {
+        sent:"✓",
+        delivered:"✓✓",
+        read:"✓✓"
+    }
+    const colorMap = {
+        sent:"gray",
+        delivered:"gray",
+        read:"blue"
+    }
     
     const getChats = (otherUsername,otherName)=>{
         let key;
@@ -27,17 +37,29 @@ const ChatScreen = ()=>{
             console.log(snapshot.exists())
             if(snapshot.exists()){
                 console.log(snapshot.val())
-                setSelectedChatMessages(snapshot.val())
+                const msgStatusesToUpdate = snapshot.val();
+                for(let i=1;i<msgStatusesToUpdate.length;i++){
+                    console.log(msgStatusesToUpdate[i])
+                    console.log(state.username)
+                    if(msgStatusesToUpdate[i].sentBy!=state.username){
+                        if(msgStatusesToUpdate[i].status!="read"){
+                            msgStatusesToUpdate[i].status="read";
+                        }
+                    }
+                }
+                console.log(msgStatusesToUpdate)
+                set(ref(db,'chats/'+key),msgStatusesToUpdate);
+                setSelectedChatMessages(msgStatusesToUpdate)
             }else{
                 set(ref(db,'chats/'+key),[
                     {
-                        message:"This is the beggining of your chat with "+otherName,
+                        message:"This is the beggining of your chat with ",
                         sentBy:"#"
                     }
                 ]);
                 setSelectedChatMessages([
                     {
-                        message:"This is the beggining of your chat with "+otherName,
+                        message:"This is the beggining of your chat with ",
                         sentBy:"#"
                     }
                 ])
@@ -70,6 +92,9 @@ const ChatScreen = ()=>{
             sentBy:state.username,
             status:"sent"
         });
+        setSelectedChatMessages(currMsgArray);
+        setCurrentMessage("")
+        currMsgArray[currMsgArray.length-1].status="delivered";
         let key;
         if(state.username>selectedChat)
             key=selectedChat+" "+state.username;
@@ -77,7 +102,7 @@ const ChatScreen = ()=>{
             key=state.username+" "+selectedChat;
         set(ref(db,'chats/'+key),currMsgArray);
         setSelectedChatMessages(currMsgArray);
-        setCurrentMessage("")
+        
 
     }
 
@@ -102,9 +127,11 @@ const ChatScreen = ()=>{
             }}>
                 <Grid item xs={12} sm={12} md={4} lg={3}
                 style={{
-                    padding:"10px"
+                    padding:"10px",
+                    height:"65vh",
+                    overflow:"scroll"
                 }}>
-                    List of people
+                    
                     <br></br>
                     {
                         Object.entries(users).map((user)=>{
@@ -150,7 +177,7 @@ const ChatScreen = ()=>{
                     }
                 </Grid>
                 <Grid item xs={12} sm={12} md={8} lg={9}>
-                Select on a person to chat
+                
                     {
                         selectedChat!=null
                         ?
@@ -160,9 +187,11 @@ const ChatScreen = ()=>{
                                 margin:"20px",
                                 padding:"10px",
                                 border:"1px solid gray",
-                                borderRadius:"15px"
+                                borderRadius:"15px",
+                                maxHeight:"65vh",
+                                overflow:"scroll"
                             }}>
-                                <p>{selectedChatMessages[0].message}</p>
+                                <p>{selectedChatMessages[0].message + selectedChat}</p>
                                 {
                                     selectedChatMessages.slice(1).map(
                                         (msg)=>{
@@ -170,15 +199,23 @@ const ChatScreen = ()=>{
                                             return(
                                                 <Grid container>
                                                 <Grid item xs={12} sm={12} md={12} lg={12}>
-                                                <p
+                                                <div
                                                 style={{
+                                                    marginTop:"15px",
                                                     border:"1px solid gray",
                                                     textAlign:"right",
                                                     borderRadius:"10px",
                                                     padding:"5px",
                                                     float:"right",
                                                     clear:"both"
-                                                }}>{msg.message}</p>
+                                                }}>
+                                                <p>{msg.message}</p>
+                                                <p
+                                                style={{
+                                                    color:colorMap[msg.status]
+                                                }}>{statusMap[msg.status]}</p>
+                                                </div>
+                                                
                                                 </Grid>
                                                 
                                                 </Grid>
@@ -236,7 +273,7 @@ const ChatScreen = ()=>{
                                 border:"1px solid gray",
                                 borderRadius:"15px"
                             }}>
-                                Nothing to show
+                                Nothing to show. Select on a person to chat
                             </div>
                         </>
                     }

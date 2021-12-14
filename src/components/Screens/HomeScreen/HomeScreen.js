@@ -5,6 +5,7 @@ import { useEffect,useState,useContext } from 'react';
 import { useNavigate } from "react-router-dom";
 import { userContext } from "../../../App";
 import { successToast,errorToast } from '../../toast';
+import logo from '../../../img/logo.png';
 
 const HomeScreen = ()=>{
   const [users,setUsers] = useState({});
@@ -117,6 +118,7 @@ const HomeScreen = ()=>{
                 setLoaded(true);
             })
             .catch(err=>{
+              window.location.reload()
                 console.log(err);
             })
             
@@ -125,14 +127,24 @@ const HomeScreen = ()=>{
     },[]);
     return(
         <>
-            <h1>Hello world</h1>
+            <img src={logo}/>
+            <br></br>
             
       {
         loaded==true
         ?
         <button
         onClick={signUp}
-        disabled={!loaded}>Enter with google</button>
+        disabled={!loaded}
+        style={{
+          width:"200px",
+          height:"50px",
+          fontSize:"1.2rem",
+          borderRadius:"15px",
+          outline:"none",
+          border:"none",
+          cursor:"pointer"
+        }}>Enter with google</button>
         :
         <p>Loading...</p> 
       }
