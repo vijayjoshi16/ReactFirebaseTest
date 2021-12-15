@@ -17,12 +17,12 @@ const ChatScreen = ()=>{
     console.log(users)
     const statusMap = {
         sent:"✓",
-        delivered:"✓✓",
+        received:"✓✓",
         read:"✓✓"
     }
     const colorMap = {
         sent:"gray",
-        delivered:"gray",
+        received:"gray",
         read:"blue"
     }
     
@@ -46,6 +46,13 @@ const ChatScreen = ()=>{
                             msgStatusesToUpdate[i].status="read";
                         }
                     }
+                    // if(msgStatusesToUpdate[i].sentBy==state.username && msgStatusesToUpdate[i].status=="sent"){
+                    //     onValue(ref(db,'users/'+otherUsername),(snapshot)=>{
+                    //         if(snapshot.val().isOnline==true){
+                    //             msgStatusesToUpdate[i].status=
+                    //         }
+                    //     })
+                    // }
                 }
                 console.log(msgStatusesToUpdate)
                 set(ref(db,'chats/'+key),msgStatusesToUpdate);
@@ -68,6 +75,11 @@ const ChatScreen = ()=>{
         })
     }
 
+    const alertUser = (e) => {
+        e.preventDefault()
+        e.returnValue = 'Do you want to logout?'
+    }
+
     useEffect(()=>{
         console.log(state)
         if(state==null)
@@ -75,8 +87,15 @@ const ChatScreen = ()=>{
         else{
             onValue(ref(db,'users/'),(snapshot)=>{
                 console.log(snapshot.val());
-                setUsers(snapshot.val());
+                const userList = snapshot.val();
+                setUsers(userList);
             })
+        }
+        window.addEventListener('beforeunload', alertUser)
+        window.addEventListener('unload', Logout)
+        return () => {
+            window.removeEventListener('beforeunload', alertUser)
+            window.removeEventListener('unload', Logout)
         }
     },[]);
 
@@ -94,7 +113,6 @@ const ChatScreen = ()=>{
         });
         setSelectedChatMessages(currMsgArray);
         setCurrentMessage("")
-        currMsgArray[currMsgArray.length-1].status="delivered";
         let key;
         if(state.username>selectedChat)
             key=selectedChat+" "+state.username;
